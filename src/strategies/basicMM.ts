@@ -44,6 +44,9 @@ export class MarketMaker {
         while (true) {
             for (const pair of tradePairs) {
                 await this.evaluateAndExecuteTrade(jupiterClient, pair, enableTrading);
+                
+                //  This function was used to test the trade execution
+                // await this.evaluateAndExecuteTradeTest(jupiterClient,pair,enableTrading);
             }
 
             console.log(`Waiting for ${this.waitTime / 1000} seconds...`);
@@ -107,14 +110,17 @@ export class MarketMaker {
         const token0Price = await this.getUSDValue(jupiterClient, pair.token0);
         const token1Price = await this.getUSDValue(jupiterClient, pair.token1);
 
-        console.log("Sol price: ",token0Price);
-        console.log("Brokie price: ",token1Price);
+        console.log("Sol USD price: ",token0Price);
+        console.log("Brokie USD price: ",token1Price);
 
         const token0Value = token0Balance.mul(token0Price);
         const token1Value = token1Balance.mul(token1Price);
 
         const totalPortfolioValue = token0Value.add(token1Value);
         const targetValuePerToken = totalPortfolioValue.div(new Decimal(2));
+
+        console.log("Total portfolio value: ",totalPortfolioValue)
+        console.log("Target value per token: ",targetValuePerToken);
 
 
         let solAmountToTrade = new Decimal(0);
@@ -184,4 +190,47 @@ export class MarketMaker {
         const quote = await jupiterClient.getQuote(token.address, this.usdcToken.address, fromNumberToLamports(1, token.decimals).toString(), this.slippageBps);
         return new Decimal(quote.outAmount).div(new Decimal(10).pow(this.usdcToken.decimals));
     }
+    /**
+     * This functio is cloned from above evaluate and execute function just to test if trade is being
+     * executed or not.
+     * @param jupiterClient 
+     * @param pair 
+     * @param enableTrading 
+     */
+    // async evaluateAndExecuteTradeTest(jupiterClient: JupiterClient, pair: any, enableTrading: Boolean): Promise<void> {
+    //     const token0Balance = await this.fetchTokenBalance(jupiterClient, pair.token0); // SOL balance
+    //     const token1Balance = await this.fetchTokenBalance(jupiterClient, pair.token1); // BRK balance
+
+    //     // Log current token balances
+    //     console.log(`Token0 balance (in ${pair.token0.symbol}): ${token0Balance.toString()}`);
+    //     console.log(`Token1 balance (in ${pair.token1.symbol}): ${token1Balance.toString()}`);
+
+    //     // Get USD value for both tokenst
+    //     const tradeNeeded = true
+    //     let solAmountToTrade = new Decimal("0.001");
+    //     // const tradeNecessity = await this.determineTradeNecessity(jupiterClient, pair, token0Balance, token1Balance);
+    //     // const { tradeNeeded, solAmountToTrade, brkAmountToTrade } = tradeNecessity!;
+
+    //     if (tradeNeeded) {
+    //         console.log('Trade needed');
+    //         if (solAmountToTrade.gt(0)) {
+    //             console.log(`Trading ${solAmountToTrade.toString()} SOL for BRK...`);
+    //             const lamportsAsString = fromNumberToLamports(solAmountToTrade.toNumber(), pair.token0.decimals).toString();
+    //             const quote = await jupiterClient.getQuote(pair.token0.address, pair.token1.address, lamportsAsString, this.slippageBps);
+    //             const swapTransaction = await jupiterClient.getSwapTransaction(quote);
+    //             if (enableTrading) await jupiterClient.executeSwap(swapTransaction);
+    //             else console.log('Trading disabled');
+    //         // } else if (brkAmountToTrade.gt(0)) {
+    //         //     console.log(`Trading ${brkAmountToTrade.toString()} BRK for SOL...`);
+    //         //     const lamportsAsString = fromNumberToLamports(brkAmountToTrade.toNumber(), pair.token1.decimals).toString();
+    //         //     const quote = await jupiterClient.getQuote(pair.token1.address, pair.token0.address, lamportsAsString, this.slippageBps);
+    //         //     const swapTransaction = await jupiterClient.getSwapTransaction(quote);
+    //         //     if (enableTrading) await jupiterClient.executeSwap(swapTransaction);
+    //         //     else console.log('Trading disabled');
+    //         // }
+    //     } else {
+    //         console.log('No trade needed');
+    //     }
+    // }
+    // }
 }
