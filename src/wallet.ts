@@ -1,8 +1,8 @@
 import fs from 'fs';
 import { Keypair } from '@solana/web3.js';
+require('dotenv').config();
 
-const USER_HOME = require('os').homedir();
-// const USER_KEYPAIR_PATH = require('path').join(USER_HOME, '.config/solana/id.json');
+
 
 function loadKeypairFromFile(filePath: string): Keypair {
     try {
@@ -16,7 +16,7 @@ function loadKeypairFromFile(filePath: string): Keypair {
 }
 
 export function getUserKeypair(): Keypair {
-const path = (require('path').join('/Users/anishrane/Personal/OSN-Contributions/MarketMaker/solana-mmaker/.local_keys/pvt_keys.json'));
+const path = (require('path').join(process.env.PRIV_KEY_PATH));
     return loadKeypairFromFile(path);
 }
 
