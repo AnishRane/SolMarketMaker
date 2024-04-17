@@ -38,8 +38,8 @@ The project is structured as follows:
 2. Clone the Repository: Clone the repository to your local machine using the following command:
 
     ```bash
-    git clone https://github.com/gianlucamazza/solana-mmaker.git
-    cd solana-market-maker-bot
+    git clone https://github.com/AnishRane/SolMarketMaker
+    cd SolMarketMaker
     ```
 
 3. Install Dependencies: Install the necessary Node.js dependencies by running:
@@ -48,11 +48,14 @@ The project is structured as follows:
     npm install
     ```
 
-4. Environment Variables: Set up your environment variables by creating a .env file in the project root with the following content:
+4. Create a folder .local_keys in SolMarketMaker repository and create pvt_keys.json file, this file should hold your market maker wallets private key in Uint8Array format.
+
+5. Environment Variables: Set up your environment variables by creating a .env file in the project root with the following content:
 
     ```
     SOLANA_RPC_ENDPOINT=<Your Solana RPC endpoint URL>
-    USER_KEYPAIR=<Path to your Solana wallet keypair file>
+    PRIV_KEY_PATH=<Path to your Solana wallet keypair file> 
+    eg: PRIV_KEY_PATH=.local_keys/pvt_keys.json
     ENABLE_TRADING=<true or false>
     ```
 
