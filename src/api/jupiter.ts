@@ -1,4 +1,4 @@
-import { Connection, Keypair, VersionedTransaction } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, VersionedTransaction } from '@solana/web3.js';
 import fetch from 'cross-fetch';
 
 /**
@@ -82,6 +82,40 @@ export class JupiterClient {
         return swapTransaction;
     }
 
+        /**
+     * Retrieves a swap transaction from the Jupiter API.
+     * @param quoteResponse The response from the getQuote method.
+     * @param wrapAndUnwrapSol Whether to wrap and unwrap SOL if necessary.
+     * @param feeAccount An optional fee account address.
+     * @returns A promise that resolves to the swap transaction.
+     */
+        async getSwapTransactionForWallet(quoteResponse: any, walletAddress:PublicKey,wrapAndUnwrapSol: boolean = true, feeAccount?: string): Promise<any> {
+            console.log("Wallet address in generating swaptxn: ",walletAddress.toString())
+            console.log("Quote response: ",JSON.stringify(quoteResponse))
+            const body = {
+                quoteResponse,
+                userPublicKey:walletAddress.toString(),
+                wrapAndUnwrapSol,
+                ...(feeAccount && { feeAccount })
+            };
+    
+            const response = await fetch(`${this.baseUri}/swap`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+    
+            if (!response.ok) {
+                // throw new Error('Failed to get swap transaction');
+                const errorData = await response.json()
+                throw new Error(`Bad Request: ${errorData.message || 'No additional details provided'}`);
+            }
+
+    
+            const { swapTransaction } = await response.json();
+            return swapTransaction;
+        }
+
     /**
      * Executes a swap transaction on the Solana blockchain.
      * @param swapTransaction The swap transaction obtained from getSwapTransaction, encoded in base64.
@@ -114,6 +148,38 @@ export class JupiterClient {
         }
     }
 
+        /**
+     * Executes a swap transaction on the Solana blockchain.
+     * @param swapTransaction The swap transaction obtained from getSwapTransaction, encoded in base64.
+     * @returns A promise that resolves to a boolean indicating whether the transaction was successfully confirmed.
+     */
+        async executeSwapForWallet(swapTransaction: any,wallet:Keypair): Promise<boolean> {
+            try {
+                const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
+                let transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+                transaction.sign([wallet]);
+    
+                const txId = await this.connection.sendRawTransaction(transaction.serialize(), {
+                    skipPreflight: true,
+                    preflightCommitment: 'singleGossip',
+                });
+                console.log('Swap transaction sent:', txId);
+    
+                const confirmation = await this.waitForTransactionConfirmation(txId);
+    
+                if (!confirmation) {
+                    console.error('Swap transaction confirmation timed out');
+                    return false;
+                }
+    
+                console.log('Swap transaction confirmed');
+                return true;
+            } catch (err) {
+                console.error('Failed to send swap transaction:', err);
+                return false;
+            }
+        }
+
     /**
      * Waits for a transaction to be confirmed on the Solana blockchain.
      * @param txId The ID of the transaction to wait for.
@@ -131,4 +197,6 @@ export class JupiterClient {
         }
         return false;
     }
+
+    async sellBrokies(){}
 }
