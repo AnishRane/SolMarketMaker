@@ -2,7 +2,10 @@ import dotenv from 'dotenv';
 import { JupiterClient } from './api/jupiter';
 import { setupSolanaConnection } from './api/solana';
 import { MarketMaker } from './strategies/basicMM';
+import { MultiWalletMM } from './strategies/MultiwalletMM';
 import { getUserKeypair } from './wallet';
+import Decimal from 'decimal.js';
+
 
 async function main() {
     dotenv.config();
@@ -26,8 +29,14 @@ async function main() {
     const jupiterClient = new JupiterClient(connection, userKeypair);
 
     const enabled = process.env.ENABLE_TRADING === 'true';
-    const marketMaker = new MarketMaker();
-    await marketMaker.runMM(jupiterClient, enabled);
+    const support = new Decimal("15") 
+    const mid = new Decimal('30')
+    const high = new Decimal("50")
+    const solAmountToTrade = new Decimal("0.1")
+    const multiWallet = new MultiWalletMM(support,mid,high,solAmountToTrade);
+    await multiWallet.runMM(jupiterClient,enabled);
+    // const marketMaker = new MarketMaker();
+    // await marketMaker.runMM(jupiterClient, enabled);
 }
 
 
