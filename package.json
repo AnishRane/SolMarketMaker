@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node dist/main.js",
     "dev": "ts-node src/main.ts",
-    "build": "tsc"
+    "build": "npx tsc"
   },
   "keywords": [
     "solana",
@@ -21,9 +21,14 @@
     "@solana/spl-token-registry": "^0.2.4574",
     "@solana/web3.js": "^1.90.0",
     "bs58": "^5.0.0",
+    "cron": "^3.1.7",
     "cross-fetch": "^4.0.0",
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
-    "jsbi": "^4.3.0"
+    "jsbi": "^4.3.0",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/cron": "^2.4.0"
   }
 }
