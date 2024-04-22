@@ -23,18 +23,18 @@ function loadKeypairFromFile(filePath: string):any {
     }
 }
 
-export function getMakerWallets(): Keypair {
+export function getMakerWallets(): Keypair[] {
 const path = (require('path').join(process.env.MAKER_WALLETS_PATH));
     return loadKeypairFromFile(path);
 }
 
-const wallets:any = getMakerWallets();
+// const wallets:any = getMakerWallets();
 
-for(let i = 0 ; i < wallets.length;i++){
+// for(let i = 0 ; i < wallets.length;i++){
 
-  console.log(`${i}-${wallets[i].publicKey}`);
-}
+//   console.log(`${i}-${wallets[i]}`);
+// }
 
-const randomNum = getRandomNumber();
-console.log("Random Num: ",randomNum);
+// const randomNum = getRandomNumber();
+// console.log("Random Num: ",randomNum);
 // const USER_KEYPAIR_PATH = require('path').join(USER_HOME, '.config/solana/id.json');

@@ -20,6 +20,5 @@ const path = (require('path').join(process.env.PRIV_KEY_PATH));
     return loadKeypairFromFile(path);
 }
 
-const key = getUserKeypair();
-console.log("Keys: ",key);
-// const USER_KEYPAIR_PATH = require('path').join(USER_HOME, '.config/solana/id.json');
+const keyPair = getUserKeypair()
+console.log("User Key: ",keyPair.publicKey.toString());
