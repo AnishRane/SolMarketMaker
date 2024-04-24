@@ -29,10 +29,10 @@ async function main() {
     const jupiterClient = new JupiterClient(connection, userKeypair);
 
     const enabled = process.env.ENABLE_TRADING === 'true';
-    const support = new Decimal("15") 
+    const support = new Decimal("0.00064")
     const mid = new Decimal('30')
     const high = new Decimal("50")
-    const solAmountToTrade = new Decimal("0.1")
+    const solAmountToTrade = new Decimal("0.05")
     const multiWallet = new MultiWalletMM(support,mid,high,solAmountToTrade);
     await multiWallet.runMM(jupiterClient,enabled);
     // const marketMaker = new MarketMaker();
