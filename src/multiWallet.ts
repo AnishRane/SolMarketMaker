@@ -2,6 +2,7 @@ import fs from 'fs';
 import { Keypair,PublicKey } from '@solana/web3.js';
 import { getRandomNumber } from './utils/randomInt';
 require('dotenv').config();
+const bs58 = require('bs58');
 
 
 
@@ -28,13 +29,13 @@ const path = (require('path').join(process.env.MAKER_WALLETS_PATH));
     return loadKeypairFromFile(path);
 }
 
+
+
 // const wallets:any = getMakerWallets();
 
-// for(let i = 0 ; i < wallets.length;i++){
-
-//   console.log(`${i}-${wallets[i]}`);
+// for(let i = 0; i < wallets.length; i++){
+//   const publicKey = bs58.encode(wallets[i]._keypair.publicKey)
+//   const secretKey = bs58.encode(wallets[i]._keypair.secretKey)
+//   console.log(`${i}-publicKey-${publicKey} || ${secretKey}`)
 // }
 
-// const randomNum = getRandomNumber();
-// console.log("Random Num: ",randomNum);
-// const USER_KEYPAIR_PATH = require('path').join(USER_HOME, '.config/solana/id.json');
