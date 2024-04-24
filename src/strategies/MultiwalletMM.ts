@@ -10,8 +10,7 @@ import { getMakerWallets } from '../multiWallet';
 import { CronJob } from 'cron';
 import { randomInt } from 'crypto';
 import { getRandomNumber } from '../utils/randomInt';
-import { PlaceBuyOrder, PlaceSellOrders } from '../utils/order';
-
+import { PlaceBuyOrders, PlaceSellOrders } from '../utils/order';
 
 export class MultiWalletMM{
   private brkToken: { address: string, symbol: string, decimals: number }
@@ -19,30 +18,34 @@ export class MultiWalletMM{
   private usdcToken: { address: string, symbol: string, decimals: number }
   private waitTime: number
   private slippageBps: number
-  private support:Decimal
   private mid:Decimal
   private high:Decimal
   private supportPrice:Decimal
   private midPrice:Decimal
   private highPrice:Decimal
   private solAmtToTrade:Decimal
+  private buyTradeExecuted:Boolean
 
 
 
-  constructor(support:Decimal,mid:Decimal,high:Decimal,solAmtToTrade:Decimal) {
+
+
+  constructor(supportPrice:Decimal,mid:Decimal,high:Decimal,solAmtToTrade:Decimal) {
     // Read decimals from the token mint addresses
     this.brkToken = { address: BRK_MINT_ADDRESS, symbol: 'BRK', decimals: 6 };
     this.solToken = { address: SOL_MINT_ADDRESS, symbol: 'SOL', decimals: 9 };
     this.usdcToken = { address: USDC_MINT_ADDRESS, symbol: 'USDC', decimals: 6 };
     this.waitTime = 60000; // 1 minute
     this.slippageBps = 50; // 0.5%
-    this.support = support
     this.mid = mid
     this.high = high
-    this.supportPrice = new Decimal(0)
+    this.supportPrice = supportPrice
     this.midPrice = new Decimal(0)
     this.highPrice = new Decimal(0)
     this.solAmtToTrade=solAmtToTrade
+    this.buyTradeExecuted = false
+
+
 }
 
   /**
@@ -53,16 +56,14 @@ export class MultiWalletMM{
   async runMM(jupiterClient:JupiterClient,enabledTrading:Boolean=false):Promise<void>{
     try{const tradePairs = {token0:this.solToken,token1:this.brkToken}
     const getWallets:Keypair[] = getMakerWallets();
-    let token1Price = await this.getUSDValue(jupiterClient,tradePairs.token1)
-    this.supportPrice = new Decimal((token1Price.mul(this.support).div(100)).add(token1Price))
-    this.midPrice = new Decimal((token1Price.mul(this.mid).div(100)).add(token1Price))
-    this.highPrice = new Decimal((token1Price.mul(this.high).div(100)).add(token1Price))
+    this.midPrice = new Decimal((this.supportPrice.mul(this.mid).div(100)).add(this.supportPrice))
+    this.highPrice = new Decimal((this.supportPrice.mul(this.high).div(100)).add(this.supportPrice))
     const cronJob= new CronJob('*/60 * * * * *',async ()=>{
 
     try{ 
-      token1Price = await this.getUSDValue(jupiterClient,tradePairs.token1)
+      // token1Price = await this.getUSDValue(jupiterClient,tradePairs.token1)
+      console.log("<===============================>")
       console.log("Evaluating Trade.....")
-      console.log("current brokie price :",token1Price)
       console.log(`Support Price: ${this.supportPrice}`)
       console.log(`Mid price: ${this.midPrice}`)
       console.log(`High price: ${this.highPrice}`)
@@ -91,42 +92,21 @@ export class MultiWalletMM{
   async evaluateAndExecuteTrade(jupiterClient: JupiterClient, wallets:Keypair[] ,pair: any, enableTrading: Boolean): Promise<void> {
     
  try{
-  const walletIndex = getRandomNumber(wallets.length);
-  const tradeWallet = wallets[walletIndex]
-  const walletAddress = new PublicKey(tradeWallet.publicKey.toString());
+  
+    // determine necessity gives signal whether to buy or sell
+     const {toBuyBrokie,toSellBrokie} = await this.determineTradeNecessity(jupiterClient, pair);
 
-    const token0Balance = await this.fetchTokenBalance(jupiterClient, walletAddress,pair.token0); // SOL balance
-    const token1Balance = await this.fetchTokenBalance(jupiterClient, walletAddress,pair.token1); // BRK balance
-
-    // Log current token balances
-    console.log(`Token0 balance (in ${pair.token0.symbol}): ${token0Balance.toString()}`);
-    console.log(`Token1 balance (in ${pair.token1.symbol}): ${token1Balance.toString()}`);
-
-    // Get USD value for both tokens
-    const {toBuyBrokie,toSellBrokie} = await this.determineTradeNecessity(jupiterClient, pair);
-    if(toBuyBrokie){
-      const walletIndex = getRandomNumber(wallets.length);
-      const tradeWallet = wallets[walletIndex]
-      const walletAddress = new PublicKey(tradeWallet.publicKey.toString());
-    
-        const token0Balance = await this.fetchTokenBalance(jupiterClient, walletAddress,pair.token0); // SOL balance
-    
-        // Log current token balances
-        console.log(`Token0 balance of ${walletAddress} (in ${pair.token0.symbol}): ${token0Balance.toString()}`);
-        console.log(`Token1 balance of ${walletAddress} (in ${pair.token1.symbol}): ${token1Balance.toString()}`);
-      // if(token0Balance < new Decimal(this.solAmtToTrade)){
-      //   throw new Error("Insufficient Sol balance")
-      // }
-      if(enableTrading){
-        await PlaceBuyOrder(jupiterClient,this.solAmtToTrade,pair,tradeWallet,this.slippageBps)
-      }
+    /**
+     * If the signal is to buy
+     * and there was no buy trade placed earlier then it will place buy order
+     */
+    if(toBuyBrokie && !this.buyTradeExecuted){
+      await PlaceBuyOrders(jupiterClient,wallets,pair,this.slippageBps,this.supportPrice,this.solAmtToTrade);
+      this.buyTradeExecuted = true  // this statement turns the bool true, so in next iteration even if the trade necessity function signals to buy the buy will not be executed.
     }
     else if(toSellBrokie){
-      const token1Balance = await this.fetchTokenBalance(jupiterClient, walletAddress,pair.token1); // BRK balance
-      // if(token1Balance <= new Decimal(1)){
-      //   throw new Error ("Insufficient Brokie balance to execute trade")
-      // }
       await PlaceSellOrders(jupiterClient,wallets,pair,this.slippageBps,this.midPrice,this.highPrice)
+      this.buyTradeExecuted = false // reset the flag to start buy after selling
     }
   }
     catch(error){
@@ -161,7 +141,7 @@ export class MultiWalletMM{
       console.log("Trade 0.1 sol, call buy function")
       toBuyBrokie = true
     }
-    else if(token1Price >= this.highPrice && token1Price >= this.midPrice){
+    else if(token1Price >= this.highPrice){
       console.log("Execute sell")
       toSellBrokie = true
     }
